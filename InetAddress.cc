@@ -1,12 +1,10 @@
-//
-// Created by frank on 17-9-1.
-//
+
 
 #include <arpa/inet.h>
 #include <strings.h>
 
-//#include <tinyev/Logger.h>
 #include "InetAddress.h"
+#include "Logger.h"
 
 using namespace zxc_net;
 
@@ -19,14 +17,14 @@ InetAddress::InetAddress(uint16_t port, bool loopback)
     addr_.sin_port = htons(port);
 }
 
-InetAddress::InetAddress(const std::string& ip, uint16_t port)
+InetAddress::InetAddress(const std::string& ip , uint16_t port)
 {
     bzero(&addr_, sizeof(addr_));
     addr_.sin_family = AF_INET;
     int ret = ::inet_pton(AF_INET, ip.c_str(), &addr_.sin_addr.s_addr);
     if (ret != 1){
-      //  SYSFATAL("InetAddress::inet_pton()");
-                 ;
+       SYSFATAL("InetAddress::inet_pton()");
+
 	 }
     addr_.sin_port = htons(port);
 }

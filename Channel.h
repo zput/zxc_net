@@ -41,6 +41,9 @@ class Channel {
 		
        bool isNoneEvent() const 
 				{ return events_ == kNoneEvent; }
+	   bool isReading() const {
+		   return (bool)(events_ & kReadEvent);
+	   }
 	   bool isWriting() const {
 		   return (bool)(events_ & kWriteEvent);
 	   }
@@ -48,6 +51,7 @@ class Channel {
 		EventLoop * ownerLoop() {return loop_;}
 		
 	    void enableReading()  { events_ |= kReadEvent;     update(); }
+		void disableReading() { events_ &=(~kReadEvent);   update(); }
 		void enableWriting()  { events_ |= kWriteEvent;    update(); }
 	    void disableWriting() { events_ &= (~kWriteEvent); update(); }
 	    void disableAll()     { events_ &= kNoneEvent;     update(); }

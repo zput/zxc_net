@@ -5,6 +5,7 @@
 
 #include"TcpConnection.h"
 #include"TcpServer.h"
+#include"Logger.h"
 
 using namespace zxc_net;
 
@@ -12,21 +13,31 @@ TcpServer::TcpServer(EventLoop* loop, InetAddress& local)
 	:loop_(loop),
 	address_(&local),
 	accept_(new Accept(loop_, address_)),
-	eventLoopThreadPool_( new EventLoopThreadPool(loop_,10) )
+	eventLoopThreadPool_( new EventLoopThreadPool(loop_,1) )
 {
+	eventLoopThreadPool_->start();
 	accept_->setMessageCallback(messageCallback_);
-	// accept_->setNewconnectionCallback([this](){newConnection( );});
-	accept_->setNewconnectionCallback(std::bind(&TcpServer::newConnection, this, std::placeholders::_1));
+ // accept_->setNewconnectionCallback([this](){newConnection( );});
+	accept_->setNewconnectionCallback(std::bind(&TcpServer::newConnection, this, 
+		                                        std::placeholders::_1, 
+		                                        std::placeholders::_2, 
+		                                        std::placeholders::_3));
 }
 
  TcpServer::TcpServer (EventLoop* loop, std::string& ip, uint16_t port)
           :loop_(loop),
 		   address_( new InetAddress(ip, port)),
 		   accept_(new Accept(loop_,address_))  {
+
 	  accept_->setMessageCallback(messageCallback_);
-	 // accept_->setNewconnectionCallback([this](){newConnection( );});
-	  accept_->setNewconnectionCallback(std::bind(&TcpServer::newConnection, this, std::placeholders::_1));
-}
+   // accept_->setNewconnectionCallback([this](){newConnection( );});
+	  accept_->setNewconnectionCallback(std::bind(&TcpServer::newConnection, this,
+		  std::placeholders::_1,
+		  std::placeholders::_2,
+		  std::placeholders::_3));
+
+ }
+
 TcpServer::~TcpServer () {
 	delete eventLoopThreadPool_;
 
@@ -35,26 +46,22 @@ TcpServer::~TcpServer () {
 
 
 
-  void TcpServer::newConnection( int connfd ) {
-	  
-	    
-	    
-	  //  std::shared_ptr<TcpConnection > conn ( new TcpConnection(loop_,connfd));
-		 EventLoop* ioLoop =eventLoopThreadPool_->getOneLoop();
+  void TcpServer::newConnection( int connfd, 
+						   const InetAddress& local,
+						   const InetAddress& peer ) {
 
-	    std::shared_ptr<TcpConnection > conn(new TcpConnection(ioLoop, connfd));
+	    EventLoop* ioLoop =eventLoopThreadPool_->getOneLoop();
+
+	    std::shared_ptr<TcpConnection > conn(new TcpConnection(ioLoop, connfd, local, peer));
 	    conn->setWriteCallback(writeCallback_);
 		conn->setMessageCallback(messageCallback_);
 		conn->setConnectionCallback(connectionCallback_);
 		conn->setWriteCompleteCallback(writeCompleteCallback_);
-
-
 	    conn->setremoveConnectionCallback(bind(&TcpServer::removeConnection,this,std::placeholders::_1));
 
-    //	conn->connectEstablished();
 		ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished,conn) );
-	    connLists_.push_back(conn);
-   
+        connLists_.push_back(conn);
+
   }
    
 void TcpServer::removeConnection( const std::shared_ptr<TcpConnection>& conn ) {
@@ -65,32 +72,17 @@ void TcpServer::removeConnection( const std::shared_ptr<TcpConnection>& conn ) {
   }
   
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& conn) {
-
 	for (CONNLISTS::iterator i = connLists_.begin(); i != connLists_.end(); i++) {
-		if (*i == conn) {
-			printf("\ntest\n");
+		if (*i == conn) {					
 			connLists_.erase(i);
-			printf("\ntest2\n");
 			break;
 		}
 	}
-	printf("\ntest3\n");
 	EventLoop* ioLoop = conn->getLoop();
-
 	ioLoop->queueInLoop(std::bind(&TcpConnection::destoryConn, conn));
-	printf("\nTcpServer::removeConnection ---close \n");
-
+	TRACE("\nTcpServer::removeConnection ---close \n");
 
 }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+

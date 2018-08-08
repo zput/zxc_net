@@ -25,7 +25,9 @@ class TcpServer {
 	
 	
 	
-	      void newConnection( int );
+		  void newConnection(int connfd,
+			  const InetAddress& local,
+			  const InetAddress& peer );
 		  void removeConnection(const std::shared_ptr<TcpConnection>&);
 		  void removeConnectionInLoop(const TcpConnectionPtr& conn);
 

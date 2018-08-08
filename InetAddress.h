@@ -1,6 +1,4 @@
-//
-// Created by frank on 17-9-1.
-//
+
 
 #ifndef TINYEV_INETADDRESS_H
 #define TINYEV_INETADDRESS_H

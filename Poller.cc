@@ -109,13 +109,13 @@ namespace zxc_net {
 				 printf("\nPoller::deleteChannel%d\n",pollFds_.back().fd);
 			 }
 		  */
-		     int channelAtEnd =pollFds_.back().fd;
-			 std::swap(pollFds_[channel->index()],pollFds_.back());  // ???
-			 if (channelAtEnd < 0) {
-			  channelAtEnd = -channelAtEnd-1;
-			 }
-			 channels_[channelAtEnd]->set_index(channel->index());	 
-			 pollFds_.pop_back();
+				 int channelAtEnd =pollFds_.back().fd;
+				 std::swap(pollFds_[channel->index()],pollFds_.back());  // ???
+				 if (channelAtEnd < 0) {
+				  channelAtEnd = -channelAtEnd-1;
+				 }
+				 channels_[channelAtEnd]->set_index(channel->index());	 
+				 pollFds_.pop_back();
 			 
 		 }   
 		 

@@ -20,7 +20,7 @@ namespace zxc_net{
 		
 			
 		    void setNewconnectionCallback(NewconnectionCallback  cb ){
-				newconnectionCallback = cb;
+				newconnectionCallback_ = cb;
 			}
 		
 		    void setMessageCallback(MessageCallback cb) {
@@ -30,7 +30,7 @@ namespace zxc_net{
 		    
 		
 		private:
-		    NewconnectionCallback  newconnectionCallback;
+		    NewconnectionCallback  newconnectionCallback_;
 			MessageCallback  messageCallback;
 	     
 		

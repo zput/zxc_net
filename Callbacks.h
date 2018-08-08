@@ -11,6 +11,8 @@
 #include <functional>
 #include <memory>
 
+#include"InetAddress.h"
+
 //#include "Timestamp.h"
 //#include "Buffer.h"
 
@@ -19,6 +21,7 @@ namespace zxc_net
 
 class TcpConnection;
 class Buffer;
+class InetAddress;
 
 // All client visible callbacks go here.   // ???
 
@@ -28,7 +31,10 @@ typedef std::function<void(const std::shared_ptr<TcpConnection> &, Buffer& )> Me
 
 typedef std::function<void(char*)> WriteCallback;
 
-typedef std::function<void(int)>   NewconnectionCallback;
+// typedef std::function<void(int)>   NewconnectionCallback;
+typedef std::function<void(int /*sockfd;*/,
+							const InetAddress& /*local*/,
+							const InetAddress& /*peer*/ )> NewconnectionCallback;
 
 typedef std::function<void(const std::shared_ptr<TcpConnection> &)>  removeConnectionCallback;
 

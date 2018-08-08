@@ -40,7 +40,9 @@ log_base(__FILE__, __LINE__, level, to_abort, fmt, ##__VA_ARGS__)
 #define LOG_SYS(to_abort, fmt, ...) \
 log_sys(__FILE__, __LINE__, to_abort, fmt, ##__VA_ARGS__)
 
-/* public  */
+
+
+/* public  *///***************API****************
 #define TRACE(fmt, ...)     if(logLevel <= LOG_LEVEL_TRACE) \
 LOG_BASE(LOG_LEVEL_TRACE, 0, fmt, ##__VA_ARGS__)
 

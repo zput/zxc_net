@@ -28,9 +28,7 @@ namespace zxc_net {
 				std::thread thread_;
 				
 	};
-	
-	
+		
 }
-
 
 #endif

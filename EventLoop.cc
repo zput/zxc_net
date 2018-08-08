@@ -177,8 +177,7 @@ void EventLoop::doPendingFunction(){
    }
    
    for(auto& e:temp) {
-	   e();          //???
-	   printf("\ndoPendingFunction\n");
+	   e();         
    }
    isInDoPendingFunction_ = false ;
    

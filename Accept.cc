@@ -85,17 +85,17 @@ void Accept::handleRead() {
 	 int clientfd=accept(acceptfd_,(ADDRESS_INET *)&client_address, client_length);
 	  // 真实项目怎么报错的   ???   
 	  if(clientfd<0) {
-		   printf("accept error \n");
+		   SYSERR("accept error \n");
 		  
 	  }
-	 
 	 newconnectionCallback(clientfd);
 	*/ 
-	printf("Accept::handleRead\n");
+
+	TRACE("Accept::handleRead\n");
 	loop_->assertInLoopThread();
+
     struct sockaddr_in addr;
     socklen_t len = sizeof(addr);
-
     void* any = &addr;
     int sockfd = ::accept4(acceptfd_, static_cast<sockaddr*>(any),
                            &len, SOCK_NONBLOCK | SOCK_CLOEXEC);
@@ -112,11 +112,14 @@ void Accept::handleRead() {
 		}
 	}
 	
-	if(newconnectionCallback) {
-		newconnectionCallback(sockfd);
-	}else
-	    ::close(sockfd);
-
+	if(newconnectionCallback_) {
+		InetAddress peer;
+		peer.setAddress(addr);
+		newconnectionCallback_(sockfd, *address_, peer);
+	}
+	else {
+		::close(sockfd);
+	}
 }
 
 
