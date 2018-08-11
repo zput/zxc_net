@@ -34,7 +34,7 @@ namespace zxc_net {
 			fillActiveChannels(numEvents, activeChannels);
 			
 		} else if (numEvents ==0 ) {			
-			printf("no thing--channels_ is %d \n",channels_.size());
+			DEBUG("no thing--channels_ is %d \n",channels_.size());
 			
 		} else {
 			printf("Poller error %d---%d\n",pollFds_.size(),errno);

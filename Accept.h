@@ -13,7 +13,7 @@ namespace zxc_net{
 	
 	class Accept{
 	     public:
-		   Accept(EventLoop* loop, InetAddress* address);
+		   Accept(EventLoop* loop, const InetAddress* address);
 		   ~Accept();
 		
 		  void handleRead();
@@ -36,9 +36,9 @@ namespace zxc_net{
 		
 		private:
 		    EventLoop* loop_;
-		    InetAddress* address_;
+		    const  InetAddress* address_;
 		    int acceptfd_;
-            Channel* acceptChannel_;	
+            Channel* acceptChannel_;
             			 
 		
 	};

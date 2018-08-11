@@ -1,6 +1,4 @@
 
-
-
 #ifndef EVENTLOOP_H
 #define EVENTLOOP_H
 #include<vector>
@@ -17,6 +15,7 @@
 #include"Callbacks.h"
 #include"Channel.h"
 #include"Timestamp.h"
+#include"Logger.h"
 
 namespace zxc_net 
 {

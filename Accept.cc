@@ -16,16 +16,15 @@ namespace {
 	int createSocket() {
 		 int acceptfd=::socket(AF_INET, SOCK_STREAM |SOCK_NONBLOCK |SOCK_CLOEXEC, 0);
 		 if (acceptfd == -1)
-				printf("Acceptor::socket()\n");
-		 return acceptfd;
-				
+			 ERROR("acceptfd == -1\n");
+		 return acceptfd;				
 	}
 		
 }
 
 
 
-Accept::Accept(EventLoop* loop,InetAddress* address )
+Accept::Accept(EventLoop* loop, const InetAddress* address )
           : loop_(loop),
 		    address_(address),
 		    acceptfd_(createSocket()),
@@ -33,24 +32,25 @@ Accept::Accept(EventLoop* loop,InetAddress* address )
 	
 	int on = 1;
     int ret = ::setsockopt(acceptfd_, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-    if (ret == -1)
-                       //SYSFATAL("Acceptor::setsockopt() SO_REUSEADDR");
-	    printf("Acceptor::setsockopt() SO_REUSEADDR");
+	if (ret == -1) {
+		SYSFATAL("Acceptor::setsockopt() SO_REUSEADDR\n");
+	}
     ret = ::setsockopt(acceptfd_, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
-    if (ret == -1)
-                       //SYSFATAL("Acceptor::setsockopt() SO_REUSEPORT");
-        printf("Acceptor::setsockopt() SO_REUSEPORT");
-	
+	if (ret == -1) {
+		SYSFATAL("Acceptor::setsockopt() SO_REUSEPORT\n");
+	}
+  
 	
 	if(::bind(acceptfd_, address_->getSockaddr(), address_->getSocklen() )<0){
-		printf("\nbind error\n");
+		ERROR("bind error\n");
 	} else {
-		printf("\nbind success\n");
+		INFO("bind success\n");
 	}
+
 	if(::listen(acceptfd_ , 10)<0) {
-		printf("\nlisten error\n");
+		ERROR("listen error\n");
 	} else {
-		printf("\nlisten success\n");
+		INFO("listen success\n");
 	}
 				/*
 				printf("bind ip port== %s \n",(address_->toIpPort()).c_str());
@@ -75,21 +75,19 @@ Accept::Accept(EventLoop* loop,InetAddress* address )
 
 Accept::~Accept(){
 	
-	
 }
 
 void Accept::handleRead() {
-	/*
-	 struct inet_address client_address;
-	 int client_length=sizeof(inet_address);
-	 int clientfd=accept(acceptfd_,(ADDRESS_INET *)&client_address, client_length);
-	  // 真实项目怎么报错的   ???   
-	  if(clientfd<0) {
-		   SYSERR("accept error \n");
-		  
-	  }
-	 newconnectionCallback(clientfd);
-	*/ 
+		/*
+		 struct inet_address client_address;
+		 int client_length=sizeof(inet_address);
+		 int clientfd=accept(acceptfd_,(ADDRESS_INET *)&client_address, client_length);
+		  // 真实项目怎么报错的   ???   
+		  if(clientfd<0) {
+			   SYSERR("accept error \n");
+		  }
+		 newconnectionCallback(clientfd);
+		*/ 
 
 	TRACE("Accept::handleRead\n");
 	loop_->assertInLoopThread();
@@ -103,13 +101,13 @@ void Accept::handleRead() {
 		int savedErrno = errno;
 	    SYSERR("Acceptor::accept4()");
 		switch (savedErrno) {
-		case ECONNABORTED:
-		case EMFILE:
-			break;
-		default:
-			FATAL("unexpected accept4() error");	
-			//printf("\naccept error\n");
+			case ECONNABORTED:
+			case EMFILE:
+						break;
+			default:
+					ERROR("unexpected accept4() error");	
 		}
+		return;
 	}
 	
 	if(newconnectionCallback_) {
@@ -121,5 +119,3 @@ void Accept::handleRead() {
 		::close(sockfd);
 	}
 }
-
-

@@ -124,6 +124,32 @@ void TcpConnection::sendInLoop(const std::string& message)
 
 
 
+
+void TcpConnection::send(Buffer& buffer)
+{
+	if (state_ != kConnected) {
+		WARN("TcpConnection::send() not connected, give up send");
+		return;
+	}
+	if (loop_->isInLoopThread()) {
+		sendInLoop(buffer.retrieveAllAsString());
+		buffer.retrieveAll();
+	}
+	else {
+		loop_->queueInLoop(
+			[ptr = shared_from_this(), str = buffer.retrieveAllAsString()]()
+		{ ptr->sendInLoop(str); });
+	}
+}
+
+
+
+
+
+
+
+
+
 void TcpConnection::shutdown()
 {
 	assert(state_ <= kDisconnecting);
@@ -248,6 +274,7 @@ void TcpConnection::connectEstablished()
 	loop_->assertInLoopThread();     
 	assert(state_ == kConnecting);
   
+	DEBUG("A new connection has created\n");
 	setState(kConnected);
 	connChannel_->enableReading();
 	connectionCallback_(shared_from_this());

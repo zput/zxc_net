@@ -13,11 +13,18 @@
 
 #define MAXLINE     256
 
-#ifndef NDEBUG
-int logLevel = LOG_LEVEL_DEBUG;
+#define IS_TRACE
+
+#if   defined(IS_TRACE)
+	int logLevel = LOG_LEVEL_TRACE;
+#elif defined(IS_DEBUG)
+	int logLevel = LOG_LEVEL_DEBUG;
+#elif defined(IS_INFO)
+	int logLevel = LOG_LEVEL_INFO;
 #else
-int logLevel = LOG_LEVEL_INFO;
+	int logLevel = LOG_LEVEL_INFO;
 #endif
+
 
 static const char *log_level_str[] = {
         "[TRACE]",

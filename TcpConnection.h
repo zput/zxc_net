@@ -5,7 +5,7 @@
 #include"Callbacks.h"
 #include"Buffer.h"
 #include"InetAddress.h"
-
+#include  <any>
 namespace zxc_net{
 
 class EventLoop;
@@ -67,12 +67,21 @@ class TcpConnection: public std::enable_shared_from_this<TcpConnection>  {
 			}
 
 	  public: 
+		  void send(Buffer& buffer);
 		  void send(const std::string& message);
 		  void shutdown();
 		  void forceClose();
 
 		  void recoverRead();
 		  void stopRead();
+
+
+////////////////////for http////////////////
+	 public:
+		void setContext(const std::any& context){context_ = context; }
+		const std::any&  getContext() const{return context_;}
+		std::any*  getMutableContext(){ return &context_; }
+
 
 	  private:
 		void sendInLoop(const std::string& message);
@@ -114,6 +123,8 @@ class TcpConnection: public std::enable_shared_from_this<TcpConnection>  {
 	
 			InetAddress local_;
 			InetAddress peer_;
+
+			std::any  context_;
 };	
 
 }

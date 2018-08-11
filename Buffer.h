@@ -10,12 +10,17 @@
 
 // #include "datetime/copyable.h"
 
-#include <algorithm>
-#include <string>
-#include <vector>
 
-#include <assert.h>
+//#include <assert.h>
 //#include <unistd.h>  // ssize_t
+
+
+#include <algorithm>
+#include <vector>
+#include <string>
+#include <cassert>
+#include <cstring>
+
 
 namespace zxc_net
 {
@@ -33,159 +38,338 @@ namespace zxc_net
                 //  : public muduo::copyable
 class Buffer 
 {
- public:
-  static const size_t kCheapPrepend = 8;
-  static const size_t kInitialSize = 1024;
+public:
+    static const size_t kCheapPrepend = 8;
+	static const size_t kInitialSize = 1024;
 
-  Buffer()
-    : buffer_(kCheapPrepend + kInitialSize),
-      readerIndex_(kCheapPrepend),
-      writerIndex_(kCheapPrepend)
-  {
-    assert(readableBytes() == 0);
-    assert(writableBytes() == kInitialSize);
-    assert(prependableBytes() == kCheapPrepend);
-  }
+	explicit Buffer(size_t initialSize = kInitialSize)
+		: buffer_(kCheapPrepend + initialSize),
+		readerIndex_(kCheapPrepend),
+		writerIndex_(kCheapPrepend)
+	{
+		assert(readableBytes() == 0);
+		assert(writableBytes() == initialSize);
+		assert(prependableBytes() == kCheapPrepend);
+	}
 
-  // default copy-ctor, dtor and assignment are fine
+	void swap(Buffer &rhs)
+	{
+		buffer_.swap(rhs.buffer_);
+		std::swap(readerIndex_, rhs.readerIndex_);
+		std::swap(writerIndex_, rhs.writerIndex_);
+	}
 
-  void swap(Buffer& rhs)
-  {
-    buffer_.swap(rhs.buffer_);
-    std::swap(readerIndex_, rhs.readerIndex_);
-    std::swap(writerIndex_, rhs.writerIndex_);
-  }
+	size_t readableBytes() const
+	{
+		return writerIndex_ - readerIndex_;
+	}
 
-  size_t readableBytes() const
-  { return writerIndex_ - readerIndex_; }
+	size_t writableBytes() const
+	{
+		return buffer_.size() - writerIndex_;
+	}
 
-  size_t writableBytes() const
-  { return buffer_.size() - writerIndex_; }
+	size_t prependableBytes() const
+	{
+		return readerIndex_;
+	}
 
-  size_t prependableBytes() const
-  { return readerIndex_; }
+	const char *peek() const
+	{
+		return begin() + readerIndex_;
+	}
 
-  const char* peek() const
-  { return begin() + readerIndex_; }
+	const char *findCRLF() const
+	{
+		const char *crlf = std::search(peek(), beginWrite(), kCRLF, kCRLF + 2);
+		return crlf == beginWrite() ? nullptr : crlf;
+	}
 
-  // retrieve returns void, to prevent
-  // string str(retrieve(readableBytes()), readableBytes());
-  // the evaluation of two functions are unspecified
-  void retrieve(size_t len)
-  {
-    assert(len <= readableBytes());
-    readerIndex_ += len;
-  }
+	const char *findCRLF(const char *start) const
+	{
+		assert(peek() <= start);
+		assert(start <= beginWrite());
+		const char *crlf = std::search(start, beginWrite(), kCRLF, kCRLF + 2);
+		return crlf == beginWrite() ? nullptr : crlf;
+	}
 
-  void retrieveUntil(const char* end)
-  {
-    assert(peek() <= end);
-    assert(end <= beginWrite());
-    retrieve(end - peek());
-  }
+	const char *findEOL() const
+	{
+		const void *eol = memchr(peek(), '\n', readableBytes());
+		return static_cast<const char *>(eol);
+	}
 
-  void retrieveAll()
-  {
-    readerIndex_ = kCheapPrepend;
-    writerIndex_ = kCheapPrepend;
-  }
+	const char *findEOL(const char *start) const
+	{
+		assert(peek() <= start);
+		assert(start <= beginWrite());
+		const void *eol = memchr(start, '\n', beginWrite() - start);
+		return static_cast<const char *>(eol);
+	}
 
-  std::string retrieveAsString()
-  {
-    std::string str(peek(), readableBytes());
-    retrieveAll();
-    return str;
-  }
+	void retrieve(size_t len)
+	{
+		assert(len <= readableBytes());
+		if (len < readableBytes())
+			readerIndex_ += len;
+		else
+			retrieveAll();
+	}
 
-  void append(const std::string& str)
-  {
-    append(str.data(), str.length());
-  }
+	void retrieveUntil(const char *end)
+	{
+		assert(peek() <= end);
+		assert(end <= beginWrite());
+		retrieve(end - peek());
+	}
 
-  void append(const char* /*restrict*/ data, size_t len)
-  {
-    ensureWritableBytes(len);
-    std::copy(data, data+len, beginWrite());
-    hasWritten(len);
-  }
+	void retrieveInt64()
+	{
+		retrieve(sizeof(int64_t));
+	}
 
-  void append(const void* /*restrict*/ data, size_t len)
-  {
-    append(static_cast<const char*>(data), len);
-  }
+	void retrieveInt32()
+	{
+		retrieve(sizeof(int32_t));
+	}
 
-  void ensureWritableBytes(size_t len)
-  {
-    if (writableBytes() < len)
-    {
-      makeSpace(len);
-    }
-    assert(writableBytes() >= len);
-  }
+	void retrieveInt16()
+	{
+		retrieve(sizeof(int16_t));
+	}
 
-  char* beginWrite()
-  { return begin() + writerIndex_; }
+	void retrieveInt8()
+	{
+		retrieve(sizeof(int8_t));
+	}
 
-  const char* beginWrite() const
-  { return begin() + writerIndex_; }
+	void retrieveAll()
+	{
+		readerIndex_ = kCheapPrepend;
+		writerIndex_ = kCheapPrepend;
+	}
 
-  void hasWritten(size_t len)
-  { writerIndex_ += len; }
+	std::string readAheadALLAsStringNotRetrieve() {
+		size_t len = readableBytes();
+		assert(len <= readableBytes());
+		std::string result(peek(), len);
+		return result;
+	}
 
-  void prepend(const void* /*restrict*/ data, size_t len)
-  {
-    assert(len <= prependableBytes());
-    readerIndex_ -= len;
-    const char* d = static_cast<const char*>(data);
-    std::copy(d, d+len, begin()+readerIndex_);
-  }
 
-  void shrink(size_t reserve)
-  {
-   std::vector<char> buf(kCheapPrepend+readableBytes()+reserve);
-   std::copy(peek(), peek()+readableBytes(), buf.begin()+kCheapPrepend);
-   buf.swap(buffer_);
-  }
 
-  /// Read data directly into buffer.
-  ///
-  /// It may implement with readv(2)
-  /// @return result of read(2), @c errno is saved
-  ssize_t readFd(int fd, int* savedErrno);
+	std::string retrieveAllAsString()
+	{
+		return retrieveAsString(readableBytes());
+	}
 
- private:
+	std::string retrieveAsString(size_t len)
+	{
+		assert(len <= readableBytes());
+		std::string result(peek(), len);
+		retrieve(len);
+		return result;
+	}
 
-  char* begin()
-  { return &*buffer_.begin(); }
+	void append(const std::string &data)
+	{
+		append(data.c_str(), data.length());
+	}
 
-  const char* begin() const
-  { return &*buffer_.begin(); }
+	void append(std::string_view data)
+	{
+		append(data.begin(), data.length());
+	}
 
-  void makeSpace(size_t len)
-  {
-    if (writableBytes() + prependableBytes() < len + kCheapPrepend)
-    {
-      buffer_.resize(writerIndex_+len);
-    }
-    else
-    {
-      // move readable data to the front, make space inside buffer
-      assert(kCheapPrepend < readerIndex_);
-      size_t readable = readableBytes();
-      std::copy(begin()+readerIndex_,
-                begin()+writerIndex_,
-                begin()+kCheapPrepend);
-      readerIndex_ = kCheapPrepend;
-      writerIndex_ = readerIndex_ + readable;
-      assert(readable == readableBytes());
-    }
-  }
+	void append(const char *data, size_t len)
+	{
+		ensureWritableBytes(len);
+		std::copy(data, data + len, beginWrite());
+		hasWritten(len);
+	}
 
- private:
-  std::vector<char> buffer_;
-  size_t readerIndex_;
-  size_t writerIndex_;
+	void append(const void *data, size_t len)
+	{
+		append(static_cast<const char *>(data), len);
+	}
+
+	void ensureWritableBytes(size_t len)
+	{
+		if (writableBytes() < len) {
+			makeSpace(len);
+		}
+		assert(writableBytes() >= len);
+	}
+
+	char *beginWrite()
+	{
+		return begin() + writerIndex_;
+	}
+
+	const char *beginWrite() const
+	{
+		return begin() + writerIndex_;
+	}
+
+	void hasWritten(size_t len)
+	{
+		assert(len <= writableBytes());
+		writerIndex_ += len;
+	}
+
+	void appendInt64(int64_t x)
+	{
+		int64_t be64 = htobe64(x);
+		append(&be64, sizeof be64);
+	}
+
+	void appendInt32(int32_t x)
+	{
+		int32_t be32 = htobe32(x);
+		append(&be32, sizeof be32);
+	}
+
+	void appendInt16(int16_t x)
+	{
+		int16_t be16 = htobe16(x);
+		append(&be16, sizeof be16);
+	}
+
+	void appendInt8(int8_t x)
+	{
+		append(&x, sizeof x);
+	}
+
+	int64_t readInt64()
+	{
+		int64_t result = peekInt64();
+		retrieveInt64();
+		return result;
+	}
+
+	int32_t readInt32()
+	{
+		int32_t result = peekInt32();
+		retrieveInt32();
+		return result;
+	}
+
+	int16_t readInt16()
+	{
+		int16_t result = peekInt16();
+		retrieveInt16();
+		return result;
+	}
+
+	int8_t readInt8()
+	{
+		int8_t result = peekInt8();
+		retrieveInt8();
+		return result;
+	}
+
+	int64_t peekInt64() const
+	{
+		assert(readableBytes() >= sizeof(int64_t));
+		int64_t be64 = 0;
+		::memcpy(&be64, peek(), sizeof be64);
+		return be64toh(be64);
+	}
+
+	int32_t peekInt32() const
+	{
+		assert(readableBytes() >= sizeof(int32_t));
+		int32_t be32 = 0;
+		::memcpy(&be32, peek(), sizeof be32);
+		return be32toh(be32);
+	}
+
+	int16_t peekInt16() const
+	{
+		assert(readableBytes() >= sizeof(int16_t));
+		int16_t be16 = 0;
+		::memcpy(&be16, peek(), sizeof be16);
+		return be16toh(be16);
+	}
+
+	int8_t peekInt8() const
+	{
+		assert(readableBytes() >= sizeof(int8_t));
+		int8_t x = *peek();
+		return x;
+	}
+
+	void prependInt64(int64_t x)
+	{
+		int64_t be64 = htobe64(x);
+		prepend(&be64, sizeof be64);
+	}
+
+	void prependInt32(int32_t x)
+	{
+		int32_t be32 = htobe32(x);
+		prepend(&be32, sizeof be32);
+	}
+
+	void prependInt16(int16_t x)
+	{
+		int16_t be16 = htobe16(x);
+		prepend(&be16, sizeof be16);
+	}
+
+	void prependInt8(int8_t x)
+	{
+		prepend(&x, sizeof x);
+	}
+
+	void prepend(const void *data, size_t len)
+	{
+		assert(len <= prependableBytes());
+		readerIndex_ -= len;
+		auto d = static_cast<const char *>(data);
+		std::copy(d, d + len, begin() + readerIndex_);
+	}
+
+	ssize_t readFd(int fd, int *savedErrno);
+
+private:
+	char *begin()
+	{
+		return &*buffer_.begin();
+	}
+
+	const char *begin() const
+	{
+		return &*buffer_.begin();
+	}
+
+	void makeSpace(size_t len)
+	{
+		if (writableBytes() + prependableBytes() < len + kCheapPrepend) {
+			buffer_.resize(writerIndex_ + len);
+		}
+		else {
+			assert(kCheapPrepend < readerIndex_);
+			size_t readable = readableBytes();
+			std::copy(begin() + readerIndex_,
+				begin() + writerIndex_,
+				begin() + kCheapPrepend);
+			readerIndex_ = kCheapPrepend;
+			writerIndex_ = readerIndex_ + readable;
+			assert(readable == readableBytes());
+		}
+	}
+
+private:
+	std::vector<char> buffer_;
+	size_t readerIndex_;
+	size_t writerIndex_;
+
+	static const char kCRLF[];
+
 };
+
+
 
 }
 

@@ -9,7 +9,7 @@
 
 using namespace zxc_net;
 
-TcpServer::TcpServer(EventLoop* loop, InetAddress& local)
+TcpServer::TcpServer(EventLoop* loop, const InetAddress& local)
 	:loop_(loop),
 	address_(&local),
 	accept_(new Accept(loop_, address_)),
@@ -17,7 +17,6 @@ TcpServer::TcpServer(EventLoop* loop, InetAddress& local)
 {
 	eventLoopThreadPool_->start();
 	accept_->setMessageCallback(messageCallback_);
- // accept_->setNewconnectionCallback([this](){newConnection( );});
 	accept_->setNewconnectionCallback(std::bind(&TcpServer::newConnection, this, 
 		                                        std::placeholders::_1, 
 		                                        std::placeholders::_2, 
@@ -40,8 +39,6 @@ TcpServer::TcpServer(EventLoop* loop, InetAddress& local)
 
 TcpServer::~TcpServer () {
 	delete eventLoopThreadPool_;
-
-
 }
 
 
@@ -83,6 +80,3 @@ void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& conn) {
 	TRACE("\nTcpServer::removeConnection ---close \n");
 
 }
-
-
-

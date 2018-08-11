@@ -4,6 +4,7 @@
 #include"TimerQueue.h"
 #include"Timestamp.h"
 
+#include<assert.h>
 #include<boost/scoped_ptr.hpp>
 #include<stdio.h>
 #include<poll.h>
@@ -88,8 +89,7 @@ void EventLoop::loop() {
 				i!= channels_.cend();   i++) {	
 				  (*i)->handleEvent();		
 			}
-			doPendingFunction();
-			
+			doPendingFunction();		
        }
 
 	   //   ::poll(NULL, 0, 5);	 
@@ -107,38 +107,29 @@ void EventLoop::quit()
 
 
 	void  EventLoop::updateChannel( Channel * channel) {
-		poller_->updateChannel(channel);
-		
+		poller_->updateChannel(channel);		
 	}
   
-    void  EventLoop::deleteChannel(Channel * channel) {
-		
-		poller_->deleteChannel(channel);
-		
+    void  EventLoop::deleteChannel(Channel * channel) {		
+		poller_->deleteChannel(channel);	
 	}
 
 
 
 
-void EventLoop::assertInLoopThread() {
-	
+void EventLoop::assertInLoopThread() {	
 	if(!isInLoop() ) {
 		abortFromLoop();
-		
 	}
 	
 }
 
-bool EventLoop::isInLoop () {
-	
+bool EventLoop::isInLoop () {	
 	return threadId_ == syscall(SYS_gettid);
-	
-	
 }
 
 void  EventLoop::abortFromLoop() {
-	printf(" not in this loop /n");	
-	
+	printf(" not in this loop /n");		
 }
 
 
@@ -162,8 +153,7 @@ void EventLoop::handleRead() {
 			
 }
 
-void EventLoop::doPendingFunction(){
-   
+void EventLoop::doPendingFunction(){   
    isInDoPendingFunction_ = true;
    std::vector<Functor> temp;
    
@@ -172,8 +162,7 @@ void EventLoop::doPendingFunction(){
 	  //std::lock_guard<std::mutex> guard(mutex_);
 	  
 	  std::lock_guard<std::mutex> guard(mutex_);
-	  temp.swap(pendingFunctor_);
-	   
+	  temp.swap(pendingFunctor_);	   
    }
    
    for(auto& e:temp) {
@@ -181,31 +170,29 @@ void EventLoop::doPendingFunction(){
    }
    isInDoPendingFunction_ = false ;
    
-   
 }
 
+
+
 void EventLoop::queueInLoop(const Functor & function ){
-	// assert(!isInloop());
+	 assert(!isInLoopThread() );
 	{ 
-	   //MutexLockGuard lock(mutex_);
-	  // std::lock_guard<std::mutex> guard(mutex_);
-	   printf("\nEventLoop::queueInLoop1\n");
-	   std::lock_guard<std::mutex> guard(mutex_);
-	   pendingFunctor_.push_back(function);
-	    printf("\nEventLoop::queueInLoop2\n");
+		//MutexLockGuard lock(mutex_);
+		std::lock_guard<std::mutex> guard(mutex_);
+		pendingFunctor_.push_back(function);
+		DEBUG("Ready to send function to other thread\n");
 	}
-	
-	 if(!isInLoopThread() || isInDoPendingFunction_) {
-	 // 由于doPendingFunctors()调用的Functor可能再
-	 // 调用queueInLoop(cb), 这时queueInLoop()就必须wakeup()
-	 // [因为,doPendingFunctors() 后面,如果循环没退出,那么又会poll(), 此时没有wakeup(),就可能不能立即跳出]
-	 //  否则这些新加的cb就不能被及时调用了.----同理在IO线程中调用Cabllback() Function时, 它的下一步就是
-	 // doPendingFunctors(), 就不存在不能立即调用的问题. 
-		 wakeUp();
-		 
-	 }
-	 printf("\nEventLoop::queueInLoop3\n");
-}
+	 
+	if(!isInLoopThread() || isInDoPendingFunction_) {
+			// 由于doPendingFunctors()调用的Functor可能再
+			// 调用queueInLoop(cb), 这时queueInLoop()就必须wakeup()
+			// [因为,doPendingFunctors() 后面,如果循环没退出,那么又会poll(), 此时没有wakeup(),就可能不能立即跳出]
+			//  否则这些新加的cb就不能被及时调用了.----同理在IO线程中调用Cabllback() Function时, 它的下一步就是
+			// doPendingFunctors(), 就不存在不能立即调用的问题. 
+	 	wakeUp(); 	 
+	}
+	 
+}    
 
 void EventLoop::runInLoop(const Functor& function) {
 	    if(isInLoopThread()) {
@@ -220,8 +207,8 @@ void EventLoop::runInLoop(const Functor& function) {
 	 uint64_t one =1;
 	 ssize_t n = ::write(wakefd_,&one, sizeof(one));
      if(n != sizeof one) {
-		// LOG_ERROR<<"EventLoop::wakeUp() writes " << n <<"bytes instead of 8";
-	    printf("\n EventLoop::wakeUP error\n");
+		//LOG_ERROR<<"EventLoop::wakeUp() writes " << n <<"bytes instead of 8";
+	      printf("\n EventLoop::wakeUP error\n");
 	}
 	 
  }

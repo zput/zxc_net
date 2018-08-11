@@ -19,7 +19,7 @@ class EventLoopThreadPool;
 
 class TcpServer {
     public:
-		  TcpServer(EventLoop* loop, InetAddress& local);
+		  TcpServer(EventLoop* loop, const InetAddress& local);
 	      TcpServer ( EventLoop* loop, std::string& ip, uint16_t port);
 	      ~TcpServer ();
 	
@@ -56,7 +56,7 @@ class TcpServer {
 	   typedef std::vector<std::shared_ptr<TcpConnection>>  CONNLISTS;
 	
 	   EventLoop* loop_;
-	   InetAddress* address_;
+	   const InetAddress* address_;
 	   Accept *  accept_;
 	   //TcpConnection* conn_;
 	   
