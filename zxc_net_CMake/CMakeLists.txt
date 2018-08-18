@@ -26,7 +26,7 @@ set(LIBRARY_OUTPUT_PATH    ${PROJECT_BINARY_DIR}/lib)
 
 message(STATUS "zxc_net project PROJECT_BINARY_DIR is ${PROJECT_BINARY_DIR}  PROJECT_SOURCE_DIR is ${PROJECT_SOURCE_DIR} CMAKE_BUILD_NO_EXAMPLES is ${CMAKE_BUILD_NO_EXAMPLES} ")
 
-#include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/zxc_net)
 
 add_subdirectory(zxc_net)
 
