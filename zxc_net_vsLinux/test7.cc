@@ -28,7 +28,7 @@ void onConnection(const std::shared_ptr<zxc_net::TcpConnection> & conn)
 void messageFunction(const std::shared_ptr<zxc_net::TcpConnection> & conn, zxc_net::Buffer& buf) {
 
 	int p = buf.readableBytes();
-	std::string ps = buf.retrieveAsString();
+	std::string ps = buf.retrieveAllAsString();
 	printf("onMessage(): received %zd bytes from connection [%zd] at %s\n",
 		buf.readableBytes(),
 		p,
