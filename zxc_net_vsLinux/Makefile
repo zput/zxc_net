@@ -1,4 +1,4 @@
-LIB_SRC = Channel.cc EventLoop.cc EventLoopThread.cc Poller.cc Timer.cc TimerQueue.cc TcpServer.cc  Accept.cc TcpConnection.cc   InetAddress.cc   Buffer.cc   TcpServerMulti.cc   ThreadPool.cc   Logger.c    EventLoopThreadPool.h EventLoopThreadPool.cpp                                     
+LIB_SRC = Channel.cc EventLoop.cc EventLoopThread.cc Poller.cc  TimerQueue.cc TcpServer.cc  Accept.cc TcpConnection.cc   InetAddress.cc   Buffer.cc   TcpServerMulti.cc   ThreadPool.cc   Logger.c    EventLoopThreadPool.h EventLoopThreadPool.cpp                                     
 BINARIES =  test7
 
 all: $( )
@@ -6,7 +6,7 @@ all: $( )
 
 
 
-CXXFLAGS = -O0 -g -std=c++11 -Wall -I ../.. -pthread
+CXXFLAGS = -O0 -g -std=c++17 -Wall -I ../.. -pthread
 LDFLAGS = -lpthread
 
 $(BINARIES):
