@@ -25,7 +25,7 @@ EventLoopThread::~EventLoopThread() {
 
 EventLoop * EventLoopThread::startLoopInThread() {
 	  
-	  thread_=std::thread([this](){ this->threadFunctor();}  );
+	  thread_=std::thread([this](){ this->threadFunctor();}  );  // anonymity function      
 	  
 	  {
 		  //std::lock_guard<std::mutex>  lock1(mutex_);
